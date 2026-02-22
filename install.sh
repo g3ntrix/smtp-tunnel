@@ -1257,8 +1257,18 @@ is_command_installed() {
 install_command() {
     local running_script
     running_script="${BASH_SOURCE[0]}"
-    [ -f "$running_script" ] || { print_error "Cannot locate script."; return 1; }
-    cp "$running_script" "$INSTALLER_CMD"
+    
+    if [ -f "$running_script" ]; then
+        cp "$running_script" "$INSTALLER_CMD"
+    else
+        # Script was likely piped (e.g., curl | bash), download from GitHub
+        print_step "Downloading installer from GitHub..."
+        if ! curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPO}/main/install.sh" -o "$INSTALLER_CMD"; then
+            print_error "Failed to download installer from GitHub."
+            return 1
+        fi
+    fi
+    
     chmod +x "$INSTALLER_CMD"
     print_success "Installed command: smtp-tunnel"
 }
